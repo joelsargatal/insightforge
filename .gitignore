@@ -1,0 +1,18 @@
+# macOS system
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+
+# virtualenv / conda
+venv/
+env/
+*.egg-info/
+
+# dotenv secrets
+.env
+.env.*
+
+# Jupyter
+*.ipynb_checkpoints/
