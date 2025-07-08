@@ -4,19 +4,18 @@ from dotenv import load_dotenv
 from agent.tools import sales_perf_monthly, sales_perf_quarterly, sales_perf_yearly, sales_product_region, sales_cust_segment, statistical_metrics, rag_search
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
+from agent.router import route_query
+from agent.rag_chat import qa_chain
 import streamlit as st
 
 # print(f"Current working directory: {os.getcwd()}")
 # st.stop()
 
 # Load environment variables from .env file
-# load_dotenv()
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 
-# Access the secrets safely
-# api_key = os.getenv("OPENAI_API_KEY")
+# Set the OpenAI key
 openai.api_key = os.getenv("OPENAI_API_KEY")
-# print( openai.api_key )
 
 # Intercept standard greetings and return a generic message
 def check_greeting(user_input: str) -> bool:
@@ -77,9 +76,24 @@ if user_input:
             "Please ask me something specific about your data or business intelligence."
         )
     else:
-        with st.spinner("Thinking..."):
-            response = agent.invoke(user_input)
-        response = response["output"]
+        # To-Do - Delete or comment
+        route = route_query(user_input)
+        print(f"[Router] Routed to: {route}")
+
+        if route_query(user_input) == "rag":
+            with st.spinner("Thinking..."):
+                response = qa_chain.invoke({"question": user_input})
+                print("Assistant (RAG):", response["answer"])
+                response = response["answer"]
+        else:
+            with st.spinner("Thinking..."):
+                response = agent.invoke(user_input)
+                print("Assistant (Agent):", response["output"])
+                response = response["output"]
+
+        # with st.spinner("Thinking..."):
+        #     response = agent.invoke(user_input)
+        # response = response["output"]
     
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):

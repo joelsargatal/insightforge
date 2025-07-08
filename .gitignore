@@ -12,7 +12,13 @@ env/
 
 # dotenv secrets
 .env
-.env.*
+*.env
 
 # Jupyter
 *.ipynb_checkpoints/
+
+# Chroma DB
+db/
+
+# Test sources
+rag_chat_test.ipynb

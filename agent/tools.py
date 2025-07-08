@@ -1,6 +1,6 @@
 from langchain.tools import tool
 from agent.data_handler import DataHandler
-from agent.rag import vector_store, build_context_from_chunks
+from agent.rag import vector_store, build_context_from_chunks, get_k_context_chunks
 
 # initialize your DataHandler once
 data_handler = DataHandler("data/sales_data.csv")
@@ -61,6 +61,7 @@ def rag_search(query: str):
     """
     Retrieve relevant BI knowledge from the embedded documents.
     """
+    k_context_chunks = get_k_context_chunks()
     results = vector_store.similarity_search_with_score(query, k_context_chunks)
     context = build_context_from_chunks(results, k_context_chunks)
 

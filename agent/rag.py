@@ -21,19 +21,22 @@ from langchain_openai.embeddings import OpenAIEmbeddings
 from langchain_community.vectorstores import Chroma
 
 # Load environment variables from .env file
-# load_dotenv()
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 
-# Access the secrets safely
-# api_key = os.getenv("OPENAI_API_KEY")
+# Set the OpenAI key
 openai.api_key = os.getenv("OPENAI_API_KEY")
-# print( openai.api_key )
+
+# k value for context chunks
+k_context_chunks = 4
 
 # Utility function for displaying data structures in a more readable format
 def pretty_print(data):
     """Nicely prints any Python data structure."""
     pprint(data, indent=2, width=100, compact=False)
 
+# Return k value for context chunks
+def get_k_context_chunks():
+    return k_context_chunks
 
 # Optimize for best use of context window for sending chunked context to LLM
 def build_context_from_chunks(results, max_chunks):
@@ -52,6 +55,11 @@ def build_context_from_chunks(results, max_chunks):
 
     return context
 
+# Function to get the vector store, for ConversationalRetrievalChain routing to work
+def get_vector_store(persist_dir="db"):
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-large")
+    vector_store = Chroma(persist_directory=persist_dir, embedding_function=embeddings)
+    return vector_store
 
 # Load the PDF and split into pages
 # To-Do - Try PyPDF2 or other that might be better
@@ -167,10 +175,12 @@ embedding_model = OpenAIEmbeddings(model = "text-embedding-3-large") # Try large
 
 
 # Build vector store from split_doc using your embedding model
-vector_store = Chroma.from_documents(final_chunks, embedding_model)
-
-# To-Do - Move initialization to the best place
-k_context_chunks = 4
+vector_store = Chroma.from_documents(
+    final_chunks,
+    embedding_model,
+    persist_directory="db" # Needed for ConversationalRetrievalChain routing to work
+)
+vector_store.persist()
 
 # Create a retriever with desired parameters
 retriever = vector_store.as_retriever(search_kwargs={"k": k_context_chunks})
