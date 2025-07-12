@@ -1,21 +1,76 @@
 from langchain.tools import tool
 from agent.data_handler import DataHandler
 from agent.rag import vector_store, build_context_from_chunks, get_k_context_chunks
+import pandas as pd
+import matplotlib.pyplot as plt
 
 # initialize your DataHandler once
 data_handler = DataHandler("data/sales_data.csv")
 
+def wants_plot(user_input: str) -> bool:
+    """
+    Check if the user asks for a plot in their query.
+    Returns: True if input suggests a plot, False otherwise
+    """
+
+    # Keywords suggesting a plot
+    plot_keywords = [
+        "plot", "chart", "graph", "diagram", "visualization", "visualize", "visual", "display", "show", "illustrate"
+    ]
+
+    normalised = user_input.strip().lower()
+    return any(kw in normalised for kw in plot_keywords)
+
+
+def generate_monthly_sales_plot() -> plt.Figure:
+    plot_data = data_handler.get_monthly_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_monthly_sales_summary()["data"])
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(df_plot["Month"], df_plot["Total Sales"], marker='o')
+    ax.set_title("Monthly Sales Performance")
+    ax.set_xlabel("Month")
+    ax.set_ylabel("Total Sales")
+    ax.tick_params(axis='x', rotation=45)
+    fig.tight_layout()
+    return fig
 # Expose tools to the agent
 
 # 1. Sales performance by time periods
 # Seperarte tools approach chosen to prevent having to filter words to get the time period or assume
 #   the LLM guesses correctly 100% of the time
+
+# Plotting-realted modifications
 @tool
-def sales_perf_monthly(query: str):
+def sales_perf_monthly(query: str = ""):
     """
     Summarizes sales performance by month.
     """
+
+    if wants_plot(query):
+        print("Plotting...")
+        # plot_data = data_handler.get_monthly_sales_summary()
+        # df_plot = pd.DataFrame(data_handler.get_monthly_sales_summary()["data"])
+        # fig = generate_monthly_sales_plot(df_plot)
+        # print(str(type(df_plot)))
+        # plt.figure(figsize=(10, 5))
+        # plt.plot(df_plot["Month"], df_plot["Total Sales"], marker="o")
+        # # plt.plot(df_plot[output["x"]], df_plot[output["y"]], marker="o")
+        # plt.title(plot_data["title"])
+        # plt.xlabel(plot_data["x"])
+        # plt.ylabel(plot_data["y"])
+        # plt.xticks(rotation=45)
+        # plt.grid(True)
+        # plt.tight_layout()
+        # plt.show()
+
     return data_handler.sales_by_time_period(period="ME")
+
+# @tool
+# def sales_perf_monthly(query: str):
+#     """
+#     Summarizes sales performance by month.
+#     """
+#     return data_handler.sales_by_time_period(period="ME")
 
 @tool
 def sales_perf_quarterly(query: str):

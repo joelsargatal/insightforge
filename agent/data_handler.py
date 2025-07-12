@@ -70,6 +70,23 @@ class DataHandler:
         """
         return self.df.describe().to_string()
     
+    # Plotting-related modifications
+    # Methods for data preparation for plotting results
+    def get_monthly_sales_summary(self):
+        """
+        Returns a DataFrame with total sales by month for plotting.
+        """
+        monthly = self.df.set_index("Date").resample("M")["Sales"].sum().reset_index()
+        monthly["Month"] = monthly["Date"].dt.strftime("%Y-%m")
+        monthly_data = monthly[["Month", "Sales"]].rename(columns={"Sales": "Total Sales"})
+        return {
+            "type": "plot_data",
+            "data": monthly_data.to_dict(orient="records"),
+            "x": "Month",
+            "y": "Total Sales",
+            "title": "Monthly Sales Performance"
+        }
+
     # later you can add:
     # def sales_by_month(self): ...
     # def pivot_product_region(self): ...
