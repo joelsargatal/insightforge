@@ -9,9 +9,6 @@ from agent.router import route_query
 from agent.rag_chat import qa_chain
 import streamlit as st
 
-# print(f"Current working directory: {os.getcwd()}")
-# st.stop()
-
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 
@@ -80,10 +77,6 @@ for msg in st.session_state.messages:
 # User input
 user_input = st.chat_input("Ask about your sales data...")
 
-
-
-
-
 if user_input:
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
@@ -109,6 +102,7 @@ if user_input:
             with st.spinner("Thinking..."):
                 adj_user_input = user_input
                 if wants_plot(user_input):
+                    print("Plotting...")
                     fig = generate_monthly_sales_plot()
                     st.pyplot(fig)
                     adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting"
@@ -119,42 +113,3 @@ if user_input:
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
-
-
-
-
-
-# if user_input:
-#     st.session_state.messages.append({"role": "user", "content": user_input})
-#     with st.chat_message("user"):
-#         st.markdown(user_input)
-
-#     # Intercept user greetings
-#     if check_greeting(user_input):
-#         response = (
-#             "👋 Hi! I can help you analyze your sales data or answer BI questions. "
-#             "Please ask me something specific about your data or business intelligence."
-#         )
-#     else:
-#         # To-Do - Delete or comment
-#         route = route_query(user_input)
-#         print(f"[Router] Routed to: {route}")
-
-#         if route_query(user_input) == "rag":
-#             with st.spinner("Thinking..."):
-#                 response = qa_chain.invoke({"question": user_input})
-#                 print("Assistant (RAG):", response["answer"])
-#                 response = response["answer"]
-#         else:
-#             with st.spinner("Thinking..."):
-#                 response = agent.invoke(user_input)
-#                 print("Assistant (Agent):", response["output"])
-#                 response = response["output"]
-
-#         # with st.spinner("Thinking..."):
-#         #     response = agent.invoke(user_input)
-#         # response = response["output"]
-    
-#     st.session_state.messages.append({"role": "assistant", "content": response})
-#     with st.chat_message("assistant"):
-#         st.markdown(response)

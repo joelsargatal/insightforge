@@ -45,24 +45,6 @@ def sales_perf_monthly(query: str = ""):
     """
     Summarizes sales performance by month.
     """
-
-    if wants_plot(query):
-        print("Plotting...")
-        # plot_data = data_handler.get_monthly_sales_summary()
-        # df_plot = pd.DataFrame(data_handler.get_monthly_sales_summary()["data"])
-        # fig = generate_monthly_sales_plot(df_plot)
-        # print(str(type(df_plot)))
-        # plt.figure(figsize=(10, 5))
-        # plt.plot(df_plot["Month"], df_plot["Total Sales"], marker="o")
-        # # plt.plot(df_plot[output["x"]], df_plot[output["y"]], marker="o")
-        # plt.title(plot_data["title"])
-        # plt.xlabel(plot_data["x"])
-        # plt.ylabel(plot_data["y"])
-        # plt.xticks(rotation=45)
-        # plt.grid(True)
-        # plt.tight_layout()
-        # plt.show()
-
     return data_handler.sales_by_time_period(period="ME")
 
 # @tool

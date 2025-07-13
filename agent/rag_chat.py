@@ -11,7 +11,7 @@ from langchain.chains.question_answering import load_qa_chain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from agent.rag import get_vector_store, get_k_context_chunks  # This returns vector_store
+from agent.rag import get_retriever # This returns a retriever for the RAG tool to use
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -23,13 +23,14 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 # llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
 
+# Return k value for context chunks
+def get_k_context_chunks():
+    return k_context_chunks
+
 # Retriever
-vector_store = get_vector_store()
-k_context_chunks = get_k_context_chunks()
-retriever = vector_store.as_retriever(search_kwargs={"k": k_context_chunks})
+retriever = get_retriever()
 
 # Set up memory
-# memory = ConversationBufferMemory(return_messages=True)
 memory = ConversationBufferMemory(
     memory_key="chat_history",
     output_key="answer",

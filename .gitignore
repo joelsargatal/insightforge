@@ -20,5 +20,8 @@ env/
 # Chroma DB
 db/
 
+# Documents metadata
+metadata.json
+
 # Test sources
 rag_chat_test.ipynb
