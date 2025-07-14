@@ -5,7 +5,6 @@ from agent.tools import sales_perf_monthly, sales_perf_quarterly, sales_perf_yea
 from agent.tools import generate_monthly_sales_plot
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
-from agent.router import route_query
 from agent.rag_chat import qa_chain
 import streamlit as st
 
@@ -15,33 +14,132 @@ load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 # Set the OpenAI key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
-# Intercept standard greetings and return a generic message
-def check_greeting(user_input: str) -> bool:
+# Classify user input using LLM
+def classify_input(user_input: str) -> str:
     """
-    Check if the user's input is a greeting, like 'hi', 'hello', etc.
-    Returns True if so, False otherwise.
+    Classifies user input as:
+    - 'bi_query': A Business Intelligence-related data question
+    - 'sales_analysis': Request to perform sales data analysis
+    - 'plot_request': Request to generate a visual or plot of the data
+    - 'greeting': Social or polite greeting
+    - 'off_topic': Unrelated to BI or sales data
+    - 'unclear': Can't classify
     """
-    greetings = ["hi", "hello", "hey", "good morning", "good afternoon", "good evening"]
-    normalized = user_input.strip().lower()
-    return any(normalized.startswith(greet) for greet in greetings)
+    prompt = f"""
+    You are an assistant that classifies user input related to a business intelligence assistant that can analyze sales data and business documents.
 
-# Plotting-related modifications
-def wants_plot(user_input: str) -> bool:
-    """
-    Check if the user asks for a plot in their query.
-    Returns: True if input suggests a plot, False otherwise
-    """
+    Classify each query as one of:
+    - bi_query: Asking about business intelligence (e.g. ETL, KPIs), insights, stats, etc.
+    - sales_analysis: Request to perform sales data analysis.
+    - plot_request: Explicitly asking for charts or graphs.
+    - greeting: A social greeting.
+    - off_topic: Clearly not related to business, sales, or data.
+    - unclear: Cannot be confidently categorized.
 
-    # Keywords suggesting a plot
-    plot_keywords = [
-        "plot", "chart", "graph", "diagram", "visualization", "visualize", "visual", "display", "show", "illustrate"
-    ]
+    Examples:
 
-    normalised = user_input.strip().lower()
-    return any(kw in normalised for kw in plot_keywords)
+    User: "Hello, how are you?"
+    Classification: greeting
+
+    User: "What are the key components of a BI system?"
+    Classification: bi_query
+
+    User: "Explain the difference between OLAP and OLTP."
+    Classification: bi_query
+
+    User: "What is ETL in business intelligence?"
+    Classification: bi_query
+
+    User: "List some benefits of implementing a BI platform."
+    Classification: bi_query
+
+    User: "How can AI enable business model innovation?"
+    Classification: bi_query
+
+    User: "What challenges exist in adopting AI for business model innovation?"
+    Classification: bi_query
+
+    User: "Give examples of AI-driven value propositions."
+    Classification: bi_query
+
+    User: "How is IoT data used in time-series forecasting?"
+    Classification: bi_query
+
+    User: "Describe a machine learning pipeline for predicting air quality using IoT."
+    Classification: bi_query
+
+    User: "What are the limitations of IoT data for ML predictions?"
+    Classification: bi_query
+
+    User: "How did Walmart use big data analytics to improve operations?"
+    Classification: bi_query
+
+    User: "What technologies did Walmart adopt to handle large-scale sales data?"
+    Classification: bi_query
+
+    User: "Summarize Walmart’s approach to customer segmentation."
+    Classification: bi_query
+
+    User: "Compare the benefits of business intelligence with those of big data analytics."
+    Classification: bi_query
+
+    User: "What role does data governance play in BI and AI adoption?"
+    Classification: bi_query
+
+    User: "Explain how time-series prediction techniques could integrate with a BI dashboard."
+    Classification: bi_query
+
+    User: "Analyze sales data by month."
+    Classification: sales_analysis
+
+    User: "Analyze sales data by quarter."
+    Classification: sales_analysis
+
+    User: "Analyze sales data by year."
+    Classification: sales_analysis
+
+    User: "Analyze sales data by product and region."
+    Classification: sales_analysis
+
+    User: "Analyze sales data by customer segment."
+    Classification: sales_analysis
+
+    User: "Provide statistical metrics of the sales data."
+    Classification: sales_analysis
+
+    User: "Do statistical analysis on the sales data."
+    Classification: sales_analysis
+
+    User: "Can you show me a graph of sales this month?"
+    Classification: plot_request
+
+    User: "Analyze sales data by month and plot the results in a graph."
+    Classification: plot_request
+
+    User: "Analyze sales data by quarter and plot the results in a graph."
+    Classification: plot_request
+
+    User: "Analyze sales data by year and plot the results in a graph."
+    Classification: plot_request
+
+    User: "What’s your favorite color?"
+    Classification: off_topic
+
+    User: "Sales"
+    Classification: unclear
+
+    User: "{user_input}"
+    Classification:
+    """.strip()
+    try:
+        classification = llm.predict(prompt).strip().lower()
+        return classification
+    except Exception as e:
+        print("Classification error:", e)
+        return "unclear"
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o", openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(model="gpt-4o", temperature=0.2, openai_api_key=os.getenv("OPENAI_API_KEY"))
 
 # Tool list
 tools = [
@@ -78,38 +176,47 @@ for msg in st.session_state.messages:
 user_input = st.chat_input("Ask about your sales data...")
 
 if user_input:
+    assistant_type = ""
+
     st.session_state.messages.append({"role": "user", "content": user_input})
     with st.chat_message("user"):
         st.markdown(user_input)
 
+    intent = classify_input(user_input)
+    print(f"[Classifier] Intent: {intent}")
+
     # Intercept user greetings
-    if check_greeting(user_input):
-        response = (
-            "👋 Hi! I can help you analyze your sales data or answer BI questions. "
-            "Please ask me something specific about your data or business intelligence."
-        )
-    else:
-        # To-Do - Delete or comment
-        route = route_query(user_input)
-        print(f"[Router] Routed to: {route}")
+    if intent == "greeting":
+        response = "👋 Hi! I can help you analyze your sales data or answer BI-related questions."
+    
+    elif intent == "off_topic":
+        response = "🔍 I’m focused on Business Intelligence and your data. Please ask me something related to that."
 
-        if route_query(user_input) == "rag":
-            with st.spinner("Thinking..."):
-                response = qa_chain.invoke({"question": user_input})
-                print("Assistant (RAG):", response["answer"])
-                response = response["answer"]
-        else:
-            with st.spinner("Thinking..."):
-                adj_user_input = user_input
-                if wants_plot(user_input):
-                    print("Plotting...")
-                    fig = generate_monthly_sales_plot()
-                    st.pyplot(fig)
-                    adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting"
-                response = agent.invoke(adj_user_input)
-                print("Assistant (Agent):", response["output"])
-                response = response["output"]
+    elif intent == "unclear":
+        response = "❓ I couldn’t understand your question. Can you rephrase it in the context of your business or data?"
 
+    elif intent == "bi_query":
+        assistant_type = " (RAG): "
+        print("[Router] Routed to: RAG")
+        print("Thinking...")
+        with st.spinner("Thinking..."):
+            response = qa_chain.invoke({"question": user_input})
+            response = response["answer"]
+        print("Assistant" + assistant_type + ":", response)
+    elif intent in ["plot_request", "sales_analysis"]:
+        assistant_type = " (Agent): "
+        print("[Router] Routed to: Agent")
+        print("Thinking...")
+        adj_user_input = user_input
+        with st.spinner("Thinking..."):
+            if intent == "plot_request":
+                print("📈 Plotting...")
+                fig = generate_monthly_sales_plot()
+                st.pyplot(fig)
+                adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting."
+            response = agent.invoke(adj_user_input)
+            response = response["output"]
+        print("Assistant" + assistant_type + ":", response)
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)

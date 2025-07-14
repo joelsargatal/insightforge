@@ -19,17 +19,30 @@ class DataHandler:
     
     # Method for producing sales by time period, called by the agent tool
     def sales_by_time_period(self, period: str):
-    # def sales_by_time_period(self, start_date: str, end_date: str): # To-Do - Future implementation: Analysis by custom dates
         """
         Aggregate sales total by time period.
-        period:
-            "ME" = monthly
-            "QE" = quarterly
-            "YE" = yearly
+        
+        Parameters:
+            period (str): 
+                "ME" = month end
+                "QE" = quarter end
+                "YE" = year end
+        Returns:
+            pd.DataFrame: DataFrame with time period and aggregated sales
         """
-        self.df.time = self.df.set_index("Date").resample(period)["Sales"].sum()
-        return self.df.time.to_string()
+        if period not in ["ME", "QE", "YE"]:
+            raise ValueError("Invalid period. Use 'ME', 'QE', or 'YE'.")
 
+        df_grouped = (
+            self.df.set_index("Date")
+            .resample(period)["Sales"]
+            .sum()
+            .reset_index()
+            .rename(columns={"Date": "Period", "Sales": "Total Sales"})
+        )
+
+        return df_grouped
+    
     # Nethod for producing sales by product and region, called by the agent tool
     def sales_by_product_region(self):
         """
@@ -43,7 +56,6 @@ class DataHandler:
         ).fillna(0)
         return pivot.to_dict() # Return dict to prevent issues in displaying the table format. Dict follows JSON format. The UI
         #  will convert it back to a table
-        # return pivot.to_string()
     
     # Method for producing customer segmentation analysis, called by the agent tool
     def sales_by_cust_segment(self):
@@ -86,7 +98,3 @@ class DataHandler:
             "y": "Total Sales",
             "title": "Monthly Sales Performance"
         }
-
-    # later you can add:
-    # def sales_by_month(self): ...
-    # def pivot_product_region(self): ...

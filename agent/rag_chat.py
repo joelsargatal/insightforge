@@ -21,7 +21,6 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Define LLM
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
-# llm = ChatOpenAI(model="gpt-3.5-turbo", temperature=0.2)
 
 # Return k value for context chunks
 def get_k_context_chunks():

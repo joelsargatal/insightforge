@@ -247,6 +247,7 @@ def load_or_rebuild_vector_store():
     docs_paths = get_docs_paths()
     docs_chunks = []
 
+    # To-Do - Maybe nest calls or something
     if needs_rebuild(docs_paths):
         print("🔁 Rebuilding vector store...")
         docs_data = load_docs(docs_paths)

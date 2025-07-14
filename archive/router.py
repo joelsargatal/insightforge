@@ -1,3 +1,6 @@
+# DEPRECATED: This module is no longer used in the current version
+# It was replaced by LLM-based classification for routing
+
 # With this function we let route the user query to the agent flow or the conversational retrieval chain
 #   based on a list of keywords. We use the conversational retrieval chain for BI concepts and practices
 #   and the agent flow for sales data analysis, as the chain produces more detailed responses, better for

@@ -4,23 +4,8 @@ from agent.rag import vector_store, build_context_from_chunks, get_k_context_chu
 import pandas as pd
 import matplotlib.pyplot as plt
 
-# initialize your DataHandler once
+# Initialize DataHandler once
 data_handler = DataHandler("data/sales_data.csv")
-
-def wants_plot(user_input: str) -> bool:
-    """
-    Check if the user asks for a plot in their query.
-    Returns: True if input suggests a plot, False otherwise
-    """
-
-    # Keywords suggesting a plot
-    plot_keywords = [
-        "plot", "chart", "graph", "diagram", "visualization", "visualize", "visual", "display", "show", "illustrate"
-    ]
-
-    normalised = user_input.strip().lower()
-    return any(kw in normalised for kw in plot_keywords)
-
 
 def generate_monthly_sales_plot() -> plt.Figure:
     plot_data = data_handler.get_monthly_sales_summary()
@@ -33,6 +18,7 @@ def generate_monthly_sales_plot() -> plt.Figure:
     ax.tick_params(axis='x', rotation=45)
     fig.tight_layout()
     return fig
+
 # Expose tools to the agent
 
 # 1. Sales performance by time periods
@@ -46,13 +32,6 @@ def sales_perf_monthly(query: str = ""):
     Summarizes sales performance by month.
     """
     return data_handler.sales_by_time_period(period="ME")
-
-# @tool
-# def sales_perf_monthly(query: str):
-#     """
-#     Summarizes sales performance by month.
-#     """
-#     return data_handler.sales_by_time_period(period="ME")
 
 @tool
 def sales_perf_quarterly(query: str):
