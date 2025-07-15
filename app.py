@@ -5,14 +5,21 @@ from agent.tools import sales_perf_monthly, sales_perf_quarterly, sales_perf_yea
 from agent.tools import generate_monthly_sales_plot
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
-from agent.rag_chat import qa_chain
+# from langchain.memory import ConversationBufferMemory
+from agent.rag_chat import qa_chain, get_memory
 import streamlit as st
+from pprint import pprint
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 
 # Set the OpenAI key
 openai.api_key = os.getenv("OPENAI_API_KEY")
+
+# Utility function for displaying data structures in a more readable format
+def pretty_print(data):
+    """Nicely prints any Python data structure."""
+    pprint(data, indent=2, width=100, compact=False)
 
 # Classify user input using LLM
 def classify_input(user_input: str) -> str:
@@ -138,6 +145,9 @@ def classify_input(user_input: str) -> str:
         print("Classification error:", e)
         return "unclear"
 
+# Get shared memory, defined in RAG chain source
+memory = get_memory()
+
 # LLM
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2, openai_api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -156,6 +166,7 @@ agent = initialize_agent(
     tools=tools,
     llm=llm,
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
+    memory=memory,
     verbose=True,
     handle_parsing_errors=True
 )
@@ -176,6 +187,7 @@ for msg in st.session_state.messages:
 user_input = st.chat_input("Ask about your sales data...")
 
 if user_input:
+    intent = "error"
     assistant_type = ""
 
     st.session_state.messages.append({"role": "user", "content": user_input})
@@ -201,8 +213,8 @@ if user_input:
         print("Thinking...")
         with st.spinner("Thinking..."):
             response = qa_chain.invoke({"question": user_input})
-            response = response["answer"]
-        print("Assistant" + assistant_type + ":", response)
+            response = response["output"]
+        print("Assistant" + assistant_type + ": ", response)
     elif intent in ["plot_request", "sales_analysis"]:
         assistant_type = " (Agent): "
         print("[Router] Routed to: Agent")
@@ -216,7 +228,15 @@ if user_input:
                 adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting."
             response = agent.invoke(adj_user_input)
             response = response["output"]
-        print("Assistant" + assistant_type + ":", response)
+        print("Assistant" + assistant_type + ": ", response)
+    elif not intent or intent == "error":
+        assistant_type = " (Error): "
+        response = "🥴 Something is wrong..."
+        print("Assistant" + assistant_type + ": ", response)
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
+    
+    print("\nMemory:")
+    pretty_print(memory.chat_memory.messages)
+    print("\n")

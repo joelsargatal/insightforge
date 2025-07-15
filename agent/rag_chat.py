@@ -19,6 +19,17 @@ load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
 # Set the OpenAI key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 
+# Set up shared memory
+memory = ConversationBufferMemory(
+    memory_key="chat_history",
+    output_key="output",
+    return_messages=True 
+)
+
+# Share memory across functions
+def get_memory():
+    return memory
+
 # Define LLM
 llm = ChatOpenAI(model="gpt-4o", temperature=0.2)
 
@@ -28,13 +39,6 @@ def get_k_context_chunks():
 
 # Retriever
 retriever = get_retriever()
-
-# Set up memory
-memory = ConversationBufferMemory(
-    memory_key="chat_history",
-    output_key="answer",
-    return_messages=True 
-)
 
 # Prompt for rephrasing (question condensing)
 CONDENSE_QUESTION_PROMPT = PromptTemplate.from_template("""
@@ -52,6 +56,7 @@ question_generator = LLMChain(
 # Chain for answering using retrieved docs
 combine_docs_chain = load_qa_chain(
     llm,
+    output_key="output",
     chain_type="stuff"
 )
 
@@ -59,6 +64,7 @@ combine_docs_chain = load_qa_chain(
 qa_chain = ConversationalRetrievalChain(
     retriever=retriever,
     memory=memory,
+    output_key="output",
     question_generator=question_generator,
     combine_docs_chain=combine_docs_chain,
     return_source_documents=True,
