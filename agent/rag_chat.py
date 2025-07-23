@@ -12,6 +12,7 @@ from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 from agent.rag import get_retriever # This returns a retriever for the RAG tool to use
+from utils.monitoring import rag_callbacks
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -68,6 +69,7 @@ qa_chain = ConversationalRetrievalChain(
     question_generator=question_generator,
     combine_docs_chain=combine_docs_chain,
     return_source_documents=True,
+    callbacks=rag_callbacks,
     verbose=True
 )
 

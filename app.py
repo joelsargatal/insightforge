@@ -1,14 +1,14 @@
 import os
 import openai
 from dotenv import load_dotenv
+from pprint import pprint
 from agent.tools import sales_perf_monthly, sales_perf_quarterly, sales_perf_yearly, sales_product_region, sales_cust_segment, statistical_metrics, rag_search
 from agent.tools import generate_monthly_sales_plot
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
-# from langchain.memory import ConversationBufferMemory
 from agent.rag_chat import qa_chain, get_memory
+from utils.monitoring import rag_callbacks, agent_callbacks, token_tracker, rag_oa_cb_handler, agent_oa_cb_handler
 import streamlit as st
-from pprint import pprint
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -149,7 +149,13 @@ def classify_input(user_input: str) -> str:
 memory = get_memory()
 
 # LLM
-llm = ChatOpenAI(model="gpt-4o", temperature=0.2, openai_api_key=os.getenv("OPENAI_API_KEY"))
+llm = ChatOpenAI(
+    model="gpt-4o",
+    temperature=0.2,
+    openai_api_key=os.getenv("OPENAI_API_KEY"),
+    callbacks=agent_callbacks,
+    verbose=True
+)
 
 # Tool list
 tools = [
@@ -168,6 +174,7 @@ agent = initialize_agent(
     agent=AgentType.ZERO_SHOT_REACT_DESCRIPTION,
     memory=memory,
     verbose=True,
+    callbacks=agent_callbacks,
     handle_parsing_errors=True
 )
 
@@ -212,7 +219,9 @@ if user_input:
         print("[Router] Routed to: RAG")
         print("Thinking...")
         with st.spinner("Thinking..."):
-            response = qa_chain.invoke({"question": user_input})
+            response = qa_chain.invoke({"question": user_input}, config={"callbacks": rag_callbacks})
+            token_tracker["rag"].update(rag_oa_cb_handler)
+            # response = qa_chain.invoke({"question": user_input})
             response = response["output"]
         print("Assistant" + assistant_type + ": ", response)
     elif intent in ["plot_request", "sales_analysis"]:
@@ -226,7 +235,9 @@ if user_input:
                 fig = generate_monthly_sales_plot()
                 st.pyplot(fig)
                 adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting."
-            response = agent.invoke(adj_user_input)
+            response = agent.invoke(adj_user_input, config={"callbacks": agent_callbacks})
+            token_tracker["agent"].update(agent_oa_cb_handler)
+            # response = agent.invoke(adj_user_input)
             response = response["output"]
         print("Assistant" + assistant_type + ": ", response)
     elif not intent or intent == "error":
@@ -240,3 +251,9 @@ if user_input:
     print("\nMemory:")
     pretty_print(memory.chat_memory.messages)
     print("\n")
+
+    print("📊 Session Token Summary:")
+    print("Agent:", token_tracker["agent"])
+    print("RAG:", token_tracker["rag"])
+    total_tokens = token_tracker["agent"].total_tokens + token_tracker["rag"].total_tokens
+    print("Total Tokens:", total_tokens)
