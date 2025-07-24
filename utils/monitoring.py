@@ -25,6 +25,31 @@ class TokenTracker:
             "total_tokens": self.total_tokens
         }
 
+    def estimate_cost_usd(self, model="gpt-4o"):
+        # Prices per 1M tokens as of July 2025
+        prices = {
+            "gpt-4o": {
+                "input": 0.005,     # $5.00 / 1M
+                "output": 0.02      # $20.00 / 1M
+            },
+            "gpt-4": {
+                "input": 0.03,
+                "output": 0.06
+            },
+            "gpt-3.5": {
+                "input": 0.001,
+                "output": 0.002
+            }
+        }
+
+        p = prices.get(model, prices["gpt-4o"])
+        cost = (
+            (self.prompt_tokens / 1_000_000) * p["input"] +
+            (self.completion_tokens / 1_000_000) * p["output"]
+        )
+        # return float(f"{cost:.6f}")
+        return round(cost, 6)
+
     def __str__(self):
         return (
             f"🧮 Token Usage:\n"

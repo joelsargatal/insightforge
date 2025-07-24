@@ -3,12 +3,13 @@ from agent.data_handler import DataHandler
 from agent.rag import vector_store, build_context_from_chunks, get_k_context_chunks
 import pandas as pd
 import matplotlib.pyplot as plt
+import seaborn as sns
 
 # Initialize DataHandler once
 data_handler = DataHandler("data/sales_data.csv")
 
 def generate_monthly_sales_plot() -> plt.Figure:
-    plot_data = data_handler.get_monthly_sales_summary()
+    # plot_data = data_handler.get_monthly_sales_summary()
     df_plot = pd.DataFrame(data_handler.get_monthly_sales_summary()["data"])
     fig, ax = plt.subplots(figsize=(10, 5))
     ax.plot(df_plot["Month"], df_plot["Total Sales"], marker='o')
@@ -18,6 +19,152 @@ def generate_monthly_sales_plot() -> plt.Figure:
     ax.tick_params(axis='x', rotation=45)
     fig.tight_layout()
     return fig
+
+def generate_quarterly_sales_plot() -> plt.Figure:
+    # plot_data = data_handler.get_quarterly_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_quarterly_sales_summary()["data"])
+    # print(str(type(df_plot)))
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(df_plot["Quarter"], df_plot["Total Sales"], marker="o")
+    # plt.title(plot_data["title"])
+    # plt.xlabel(plot_data["x"])
+    # plt.ylabel(plot_data["y"])
+    # plt.xticks(rotation=45)
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(df_plot["Quarter"], df_plot["Total Sales"], marker='o')
+    ax.set_title("Quarterly Sales Performance")
+    ax.set_xlabel("Quarter")
+    ax.set_ylabel("Total Sales")
+    ax.tick_params(axis='x', rotation=45)
+    fig.tight_layout()
+    return fig
+
+
+def generate_yearly_sales_plot() -> plt.Figure:
+    # plot_data = data_handler.get_yearly_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_yearly_sales_summary()["data"])
+    # print(str(type(df_plot)))
+    # plt.figure(figsize=(10, 5))
+    # plt.plot(df_plot["Year"], df_plot["Total Sales"], marker="o")
+    # plt.title(plot_data["title"])
+    # plt.xlabel(plot_data["x"])
+    # plt.ylabel(plot_data["y"])
+    # plt.xticks(rotation=45)
+    # plt.grid(True)
+    # plt.tight_layout()
+    # plt.show()
+
+    fig, ax = plt.subplots(figsize=(10, 5))
+    ax.plot(df_plot["Year"], df_plot["Total Sales"], marker='o')
+    ax.set_title("Yearly Sales Performance")
+    ax.set_xlabel("Year")
+    ax.set_ylabel("Total Sales")
+    ax.tick_params(axis='x', rotation=45)
+    fig.tight_layout()
+    return fig
+
+def generate_sales_product_region_plot() -> plt.Figure:
+    plot_data = data_handler.get_product_region_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_product_region_sales_summary()["data"])
+    products = df_plot[plot_data["x"]].unique()
+    regions = df_plot[plot_data["hue"]].unique()
+
+    # Create grouped bar chart
+    # plt.figure(figsize=(10, 6))
+    # for region in regions:
+    #     region_data = df_plot[df_plot["Region"] == region]
+    #     plt.bar(region_data[plot_data["x"]], region_data[plot_data["y"]], label=region)
+
+    # plt.xlabel(plot_data["x"])
+    # plt.ylabel(plot_data["y"])
+    # plt.title(plot_data["title"])
+    # plt.xticks(rotation=45)
+    # plt.legend(title=plot_data["hue"])
+    # plt.tight_layout()
+    # plt.grid(axis="y", linestyle="--", alpha=0.5)
+    # plt.show()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for region in regions:
+        region_data = df_plot[df_plot["Region"] == region]
+        ax.bar(region_data[plot_data["x"]], region_data[plot_data["y"]], label=region)
+
+    ax.set_xlabel(plot_data["x"])
+    ax.set_ylabel(plot_data["y"])
+    ax.set_title(plot_data["title"])
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend(title=plot_data["hue"])
+    fig.tight_layout()
+    # fig.grid(axis="y", linestyle="--", alpha=0.5)
+    return fig
+
+def generate_sales_cust_segment_plot() -> plt.Figure:
+    plot_data = data_handler.get_customer_segment_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_customer_segment_sales_summary()["data"])
+    # for gender in df_plot["Customer_Gender"].unique():
+    #     subset = df_plot[df_plot["Customer_Gender"] == gender]
+    #     plt.bar(subset["Age_Group"], subset["Total_Sales"], label=gender)
+
+    # plt.title(plot_data["title"])
+    # plt.xlabel(plot_data["x"])
+    # plt.ylabel(plot_data["y"])
+    # plt.legend()
+    # plt.xticks(rotation=45)
+    # plt.tight_layout()
+    # plt.show()
+
+    fig, ax = plt.subplots(figsize=(10, 6))
+    for gender in df_plot["Customer_Gender"].unique():
+        subset = df_plot[df_plot["Customer_Gender"] == gender]
+        ax.bar(subset["Age_Group"], subset["Total_Sales"], label=gender)
+
+    ax.set_title(plot_data["title"])
+    ax.set_xlabel(plot_data["x"])
+    ax.set_ylabel(plot_data["y"])
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend()
+    fig.tight_layout()
+    # fig.grid(axis="y", linestyle="--", alpha=0.5)
+    return fig
+
+def generate_statistical_metrics_plot() -> plt.Figure:
+    plot_data = data_handler.get_statistical_sales_summary()
+    df_plot = pd.DataFrame(data_handler.get_statistical_sales_summary()["data"])
+
+    # Convert y column to numeric, coercing errors (turns invalid into NaN)
+    df_plot[plot_data["y"]] = pd.to_numeric(df_plot[plot_data["y"]], errors="coerce")
+    # Drop any rows with NaN values in y
+    df_plot = df_plot.dropna(subset=[plot_data["y"]])
+
+    # plt.figure(figsize=(12, 6))
+    # print("Available columns:", df_plot.columns)
+    # sns.barplot(data=df_plot, x=plot_data["x"], y=plot_data["y"], hue=plot_data["hue"])
+
+    # plt.title(plot_data["title"])
+    # plt.xlabel(plot_data["x"])
+    # plt.ylabel(plot_data["y"])
+    # plt.xticks(rotation=45)
+    # plt.legend(title=plot_data["hue"], bbox_to_anchor=(1.05, 1), loc='upper left')
+    # plt.tight_layout()
+    # plt.grid(axis="y", linestyle="--", alpha=0.5)
+    # plt.show()
+
+    fig, ax = plt.subplots(figsize=(12, 6))
+    sns.barplot(data=df_plot, x=plot_data["x"], y=plot_data["y"], hue=plot_data["hue"])
+
+    ax.set_title(plot_data["title"])
+    ax.set_xlabel(plot_data["x"])
+    ax.set_ylabel(plot_data["y"])
+    ax.tick_params(axis='x', rotation=45)
+    ax.legend(title=plot_data["hue"], bbox_to_anchor=(1.05, 1), loc='upper left')
+    fig.tight_layout()
+    # fig.grid(axis="y", linestyle="--", alpha=0.5)
+    return fig
+
 
 # Expose tools to the agent
 

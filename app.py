@@ -3,12 +3,33 @@ import openai
 from dotenv import load_dotenv
 from pprint import pprint
 from agent.tools import sales_perf_monthly, sales_perf_quarterly, sales_perf_yearly, sales_product_region, sales_cust_segment, statistical_metrics, rag_search
-from agent.tools import generate_monthly_sales_plot
+from agent.tools import generate_monthly_sales_plot, generate_quarterly_sales_plot, generate_yearly_sales_plot, generate_sales_product_region_plot, generate_sales_cust_segment_plot, generate_statistical_metrics_plot
 from langchain_openai import ChatOpenAI
 from langchain.agents import initialize_agent, AgentType
 from agent.rag_chat import qa_chain, get_memory
 from utils.monitoring import rag_callbacks, agent_callbacks, token_tracker, rag_oa_cb_handler, agent_oa_cb_handler
 import streamlit as st
+
+
+
+import sys
+
+# Optional: import early to avoid circular import issues
+from evaluation.qa_eval import run_evaluation  # Replace with correct module name
+from evaluation.qa_eval_sets import qa_sets   # If sets are in a separate module
+
+if len(sys.argv) > 1:
+    eval_set_name = sys.argv[1]
+    if eval_set_name in qa_sets:
+        examples = qa_sets[eval_set_name]
+        run_evaluation(qa_set_name=eval_set_name)
+        # run_evaluation(examples, qa_set_name=eval_set_name)
+    else:
+        print(f"⚠️ Unknown evaluation set: '{eval_set_name}'")
+    st.stop()
+
+
+
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -231,8 +252,21 @@ if user_input:
         adj_user_input = user_input
         with st.spinner("Thinking..."):
             if intent == "plot_request":
+                if "month" in adj_user_input.lower():
+                    fig = generate_monthly_sales_plot()
+                elif "quarter" in adj_user_input.lower():
+                    fig = generate_quarterly_sales_plot()
+                elif "year" in adj_user_input.lower():
+                    fig = generate_yearly_sales_plot()
+                elif "product" in adj_user_input.lower():
+                    fig = generate_sales_product_region_plot()
+                elif "segment" in adj_user_input.lower():
+                    fig = generate_sales_cust_segment_plot()
+                elif "metrics" in adj_user_input.lower():
+                    fig = generate_statistical_metrics_plot()
+                else:
+                    raise ValueError("Could not determine plot type from query.")
                 print("📈 Plotting...")
-                fig = generate_monthly_sales_plot()
                 st.pyplot(fig)
                 adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting."
             response = agent.invoke(adj_user_input, config={"callbacks": agent_callbacks})
@@ -247,13 +281,20 @@ if user_input:
     st.session_state.messages.append({"role": "assistant", "content": response})
     with st.chat_message("assistant"):
         st.markdown(response)
-    
-    print("\nMemory:")
-    pretty_print(memory.chat_memory.messages)
-    print("\n")
+
+    # Enable to debug memory issues
+    # print("\nMemory:")
+    # pretty_print(memory.chat_memory.messages)
+    # print("\n")
 
     print("📊 Session Token Summary:")
     print("Agent:", token_tracker["agent"])
+    agent_token_cost = token_tracker["agent"].estimate_cost_usd('gpt-4o')
+    print(f"Agent Token Cost (USD): ${agent_token_cost:.6f}")
     print("RAG:", token_tracker["rag"])
+    rag_token_cost = token_tracker["rag"].estimate_cost_usd('gpt-4o')
+    print(f"RAG Token Cost (USD): ${rag_token_cost:.6f}")
     total_tokens = token_tracker["agent"].total_tokens + token_tracker["rag"].total_tokens
     print("Total Tokens:", total_tokens)
+    total_cost = agent_token_cost + rag_token_cost
+    print(f"Total Cost (USD): ${total_cost:.6f}")
