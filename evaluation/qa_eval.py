@@ -1,17 +1,36 @@
+import os
+import openai
+from dotenv import load_dotenv
+from agent.rag_chat import qa_chain
 from langchain.evaluation.qa import QAEvalChain
 from langchain_openai import ChatOpenAI
 from evaluation.qa_eval_sets import qa_sets
+import streamlit as st
 import random
+
+# Load environment variables from .env file
+load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
+
+# Set the OpenAI key
+openai.api_key = os.getenv("OPENAI_API_KEY")
 
 # Setup LLM and evaluation chain
 llm = ChatOpenAI(model="gpt-4o")
 eval_chain = QAEvalChain.from_llm(llm)
 
 def initialize_predictions(examples):
-    for ex in examples:
-        if "prediction" not in ex:
-            result = qa_chain.invoke({"question": ex["query"]})
-            ex["prediction"] = result["output"]
+    for i, ex in enumerate(examples):
+        if not ex.get("prediction"):
+            print(f"🔍 Generating prediction for Q{i+1}: {ex['query']}")
+            st.markdown(f"🔍 Generating prediction for Q{i+1}: {ex['query']}")
+            try:
+                result = qa_chain.invoke({"question": ex["query"]})
+                ex["prediction"] = result["output"]
+                # ex["prediction"] = result["results"]
+            except Exception as e:
+                ex["prediction"] = "ERROR"
+                print(f"⚠️ Failed to generate prediction: {e}")
+                st.markdown(f"⚠️ Failed to generate prediction: {e}")
 
 def run_evaluation(qa_set_name="core", sample_size=None):
     print(f"📊 Evaluating set: {qa_set_name}")
@@ -27,17 +46,30 @@ def run_evaluation(qa_set_name="core", sample_size=None):
         examples = random.sample(examples, min(sample_size, len(examples)))
 
     # Evaluate using correct answer vs prediction (for now we mock predictions)
-    predictions = [{"query": ex["query"], "result": ex.get("prediction", ex["answer"])} for ex in examples]
+    predictions = [{"query": ex["query"], "result": ex["prediction"]} for ex in examples]
+    # predictions = [{"query": ex["query"], "result": ex.get("prediction", ex["answer"])} for ex in examples]
     references = [{"query": ex["query"], "answer": ex["answer"]} for ex in examples]
 
     graded_outputs = eval_chain.evaluate(examples=references, predictions=predictions)
 
     # Display results
     for i, result in enumerate(graded_outputs):
-        print(f"\n🔹 Q: {examples[i]['query']}")
-        print(f"✅ A: {examples[i]['answer']}")
-        print(f"🤖 P: {predictions[i]['result']}")
-        print(f"🧠 Grade: {result.get('results')}")
-        print(f"📝 Explanation: {result.get('reasoning', 'N/A')}")
+        q = examples[i]['query']
+        a = examples[i]['answer']
+        p = predictions[i]['result']
+        g = result.get('results')
+        r = result.get('reasoning', 'N/A')
+        print(f"\n🔹 Q: {q}")
+        print(f"✅ A: {a}")
+        print(f"🤖 P: {p}")
+        print(f"🧠 Grade: {g}")
+        print(f"📝 Explanation: {r}")
+        st.markdown(f"""
+        **🔹 Q:** {q}  
+        **✅ A:** {a}  
+        **🤖 P:** {p if p else "None"}  
+        **🧠 Grade:** `{g}`  
+        **📝 Explanation:** {r}
+        """)
 
     return graded_outputs
