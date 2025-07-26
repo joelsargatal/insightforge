@@ -6,12 +6,12 @@ import os
 import openai
 from dotenv import load_dotenv
 
-from langchain.chains import ConversationalRetrievalChain, LLMChain #, load_qa_chain
+from langchain.chains import ConversationalRetrievalChain, LLMChain
 from langchain.chains.question_answering import load_qa_chain
 from langchain.memory import ConversationBufferMemory
 from langchain.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
-from agent.rag import get_retriever # This returns a retriever for the RAG tool to use
+from rag.rag import get_retriever # This returns a retriever for the RAG tool to use
 from utils.monitoring import rag_callbacks
 
 # Load environment variables from .env file

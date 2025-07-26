@@ -47,7 +47,6 @@ class TokenTracker:
             (self.prompt_tokens / 1_000_000) * p["input"] +
             (self.completion_tokens / 1_000_000) * p["output"]
         )
-        # return float(f"{cost:.6f}")
         return round(cost, 6)
 
     def __str__(self):

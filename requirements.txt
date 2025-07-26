@@ -1,5 +1,21 @@
-streamlit
-langchain
-langchain-openai
-pandas
-matplotlib
+# Core LLM and LangChain functionality
+langchain==0.3.25
+langchain-openai==0.2.14
+openai==1.75.0
+
+# Streamlit frontend
+streamlit==1.45.1
+
+# Data processing and plotting
+pandas==2.2.3
+matplotlib==3.10.1
+seaborn==0.13.2
+
+# Vector store and embedding support
+chromadb==0.5.23
+
+# PDF parsing (for RAG / document ingestion)
+PyPDF2==3.0.1
+
+# Utilities
+python-dotenv==1.0.1

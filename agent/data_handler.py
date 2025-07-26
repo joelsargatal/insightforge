@@ -106,7 +106,6 @@ class DataHandler:
         """
         quarterly = self.df.set_index("Date").resample("Q")["Sales"].sum().reset_index()
         quarterly["Quarter"] = quarterly["Date"].dt.to_period("Q").astype(str)
-        # quarterly["Quarter"] = quarterly["Date"].dt.strftime("%Y-Q%q")
         quarterly_data = quarterly[["Quarter", "Sales"]].rename(columns={"Sales": "Total Sales"})
         return {
             "type": "plot_data",
@@ -187,7 +186,6 @@ class DataHandler:
         desc_df = self.df.describe(include="all").transpose().reset_index()
         # desc = self.df.describe().T  # Transpose to get features as rows
 
-
         # Keep only numeric columns (exclude object and datetime)
         numeric_types = ["int64", "float64"]
         filtered_df = desc_df[desc_df["index"].isin(self.df.select_dtypes(include=numeric_types).columns)]
@@ -199,10 +197,6 @@ class DataHandler:
         # Drop any rows with missing or invalid numeric values
         melted["Value"] = pd.to_numeric(melted["Value"], errors="coerce")
         melted = melted.dropna(subset=["Value"])
-
-        # plot_df = desc[["mean", "std", "min", "25%", "50%", "75%", "max"]].reset_index().rename(columns={"index": "Feature"})
-
-        # plot_data = plot_df.melt(id_vars="Feature", var_name="Statistic", value_name="Value")
 
         return {
             "type": "plot_data",

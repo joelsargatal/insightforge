@@ -1,12 +1,13 @@
 import os
 import openai
 from dotenv import load_dotenv
-from agent.rag_chat import qa_chain
+import random
+from rag.rag_chat import qa_chain
 from langchain.evaluation.qa import QAEvalChain
 from langchain_openai import ChatOpenAI
 from evaluation.qa_eval_sets import qa_sets
+import matplotlib.pyplot as plt
 import streamlit as st
-import random
 
 # Load environment variables from .env file
 load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -17,6 +18,21 @@ openai.api_key = os.getenv("OPENAI_API_KEY")
 # Setup LLM and evaluation chain
 llm = ChatOpenAI(model="gpt-4o")
 eval_chain = QAEvalChain.from_llm(llm)
+
+def plot_eval_results(results):
+    counts = {"CORRECT": 0, "INCORRECT": 0, "Other": 0}
+    for res in results:
+        grade = res.get("results", "").upper()
+        if grade in counts:
+            counts[grade] += 1
+        else:
+            counts["Other"] += 1
+
+    plt.bar(counts.keys(), counts.values(), color=["green", "red", "gray"])
+    plt.title("QAEvalChain Results")
+    plt.ylabel("Count")
+    # plt.show()
+    st.pyplot(plt.gcf())
 
 def initialize_predictions(examples):
     for i, ex in enumerate(examples):
@@ -47,7 +63,6 @@ def run_evaluation(qa_set_name="core", sample_size=None):
 
     # Evaluate using correct answer vs prediction (for now we mock predictions)
     predictions = [{"query": ex["query"], "result": ex["prediction"]} for ex in examples]
-    # predictions = [{"query": ex["query"], "result": ex.get("prediction", ex["answer"])} for ex in examples]
     references = [{"query": ex["query"], "answer": ex["answer"]} for ex in examples]
 
     graded_outputs = eval_chain.evaluate(examples=references, predictions=predictions)
@@ -71,5 +86,7 @@ def run_evaluation(qa_set_name="core", sample_size=None):
         **🧠 Grade:** `{g}`  
         **📝 Explanation:** {r}
         """)
+
+    plot_eval_results(graded_outputs)
 
     return graded_outputs

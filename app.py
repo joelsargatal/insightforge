@@ -1,5 +1,3 @@
-import streamlit as st
-
 def main():
     import os
     import openai
@@ -9,27 +7,8 @@ def main():
     from agent.tools import generate_monthly_sales_plot, generate_quarterly_sales_plot, generate_yearly_sales_plot, generate_sales_product_region_plot, generate_sales_cust_segment_plot, generate_statistical_metrics_plot
     from langchain_openai import ChatOpenAI
     from langchain.agents import initialize_agent, AgentType
-    from agent.rag_chat import qa_chain, get_memory
+    from rag.rag_chat import qa_chain, get_memory
     from utils.monitoring import rag_callbacks, agent_callbacks, token_tracker, rag_oa_cb_handler, agent_oa_cb_handler
-
-    # import sys
-
-    # # Optional: import early to avoid circular import issues
-    # from evaluation.qa_eval import run_evaluation  # Replace with correct module name
-    # from evaluation.qa_eval_sets import qa_sets   # If sets are in a separate module
-
-    # if len(sys.argv) > 1:
-    #     eval_set_name = sys.argv[1]
-    #     if eval_set_name in qa_sets:
-    #         examples = qa_sets[eval_set_name]
-    #         run_evaluation(qa_set_name=eval_set_name)
-    #         # run_evaluation(examples, qa_set_name=eval_set_name)
-    #     else:
-    #         print(f"⚠️ Unknown evaluation set: '{eval_set_name}'")
-    #     st.stop()
-
-
-
 
     # Load environment variables from .env file
     load_dotenv(dotenv_path="/Users/scarbez-ai/Documents/Projects/_env/keys.env")
@@ -242,7 +221,6 @@ def main():
             with st.spinner("Thinking..."):
                 response = qa_chain.invoke({"question": user_input}, config={"callbacks": rag_callbacks})
                 token_tracker["rag"].update(rag_oa_cb_handler)
-                # response = qa_chain.invoke({"question": user_input})
                 response = response["output"]
             print("Assistant" + assistant_type + ": ", response)
         elif intent in ["plot_request", "sales_analysis"]:
@@ -271,7 +249,6 @@ def main():
                     adj_user_input = user_input + ". Ignore the plotting ask. Do not generate code for plotting."
                 response = agent.invoke(adj_user_input, config={"callbacks": agent_callbacks})
                 token_tracker["agent"].update(agent_oa_cb_handler)
-                # response = agent.invoke(adj_user_input)
                 response = response["output"]
             print("Assistant" + assistant_type + ": ", response)
         elif not intent or intent == "error":
@@ -301,49 +278,48 @@ def main():
 
 if __name__ == "__main__":
     import sys
+    import streamlit as st
     from evaluation.qa_eval_sets import qa_sets
 
     if len(sys.argv) > 1:
-        if sys.argv[1] in qa_sets:
-            st.title("🧪 Evaluation")
-            st.write(f"📊 Running evaluation for: `{sys.argv[1]}`")
+        eval_set = sys.argv[1]
+
+        if eval_set in qa_sets:
+            st.set_page_config(page_title="Q&A Evaluation", layout="wide")
+            st.title("🧪 Q&A Evaluation")
+            st.write(f"📊 Running evaluation for: `{eval_set}`")
             from evaluation.qa_eval import run_evaluation
-            run_evaluation(qa_set_name=sys.argv[1])
+            run_evaluation(qa_set_name=eval_set)
             st.info("✅ Evaluation complete. You can now close the Streamlit app.")
             st.stop()
             sys.exit(0)  # clean shutdown
         else:
-            print(f"⚠️ Unknown evaluation set: '{sys.argv[1]}'")
+            print(f"⚠️ Unknown evaluation set: '{eval_set}'")
             print("""\nUsage\n-----
             \nBI AI Assistant:
             \tstreamlit run app.py
-            \nEvaluation:
+            \nQ&A Evaluation:
             \tstreamlit run app.py <evaluation_set_name>
             \nEvaluation set names:
             \t- core
             \t- rotation_1
             \t- rotation_2
             """)
-            st.title("🧪 Evaluation")
-            st.error(f"⚠️ Unknown evaluation set: `{sys.argv[1]}`")
+            st.set_page_config(page_title="Evaluation Error", layout="wide")
+            st.title("🧪 Q&A Evaluation")
+            st.error(f"⚠️ Unknown evaluation set: `{eval_set}`")
             st.markdown("""
-            **Usage**  
-            - To run the BI AI Assistant: `streamlit run app.py`  
-            - To run evaluation: `streamlit run app.py core`  
-            **Valid evaluation sets:** `core`, `rotation_1`, `rotation_2`
+            ### Usage
+            \n**To run the BI AI Assistant:**
+            \n`streamlit run app.py`
+            \n\n**To run Q&A evaluation:**
+            \n`streamlit run app.py <evaluation_set_name>`
+            \n\n*Available Sets:*
+            \n- core
+            \n- rotation_1
+            \n- rotation_2
             """)
             st.stop()
             sys.exit(1)
     else:
         main()
-
-
-    # if len(sys.argv) > 1:
-    #     eval_set_name = sys.argv[1]
-    #     if eval_set_name in qa_sets:
-    #         examples = qa_sets[eval_set_name]
-    #         run_evaluation(qa_set_name=eval_set_name)
-    #         # run_evaluation(examples, qa_set_name=eval_set_name)
-    #     else:
-    #         print(f"⚠️ Unknown evaluation set: '{eval_set_name}'")
-    #     st.stop()

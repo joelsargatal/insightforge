@@ -22,7 +22,6 @@ from langchain_core.documents import Document
 from langchain_openai.embeddings import OpenAIEmbeddings
 
 # Vector store
-# from langchain.vectorstores import Chroma
 from langchain_community.vectorstores import Chroma
 
 # Plotting
